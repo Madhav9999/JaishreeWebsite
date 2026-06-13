@@ -17,8 +17,33 @@ export function Contact() {
 
     const text = `Name: ${name}\nCompany: ${company}\nPhone: ${phone}\nEmail: ${email}\nProduct Interest: ${product}\nMessage: ${message}`;
     const encoded = encodeURIComponent(text);
-    // Open WhatsApp chat with prefilled text (opens in new tab)
-    window.open(`https://wa.me/917615094242?text=${encoded}`, "_blank");
+
+    // IMPORTANT: open WhatsApp immediately in the same user gesture to avoid popup blockers.
+    // Opening after async/await or setTimeout will usually be blocked by browsers (see StackOverflow discussions).
+    const waUrl = `https://wa.me/917615094242?text=${encoded}`;
+    try {
+      window.open(waUrl, "_blank");
+    } catch (err) {
+      // best-effort fallback
+      window.location.href = waUrl;
+    }
+
+    // Send form data in background (non-blocking) to an analytics/collection endpoint if configured.
+    // Use navigator.sendBeacon where available so it doesn't block the UI or interfere with the pop-up.
+    const backendEndpoint = "https://formspree.io/f/YOUR_FORM_ID"; // change or remove if you don't use Formspree
+    if (!backendEndpoint.includes("YOUR_FORM_ID")) {
+      try {
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(backendEndpoint, data);
+        } else {
+          // Fire-and-forget fetch; do not await.
+          fetch(backendEndpoint, { method: "POST", body: data }).catch(() => {});
+        }
+      } catch (e) {
+        // ignore background send errors
+      }
+    }
+
     setSent(true);
   }
 
@@ -26,7 +51,9 @@ export function Contact() {
     <section id="contact" className="section-pad">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <p className="text-orange font-semibold uppercase text-sm tracking-widest mb-3">Contact Us</p>
+          <p className="text-orange font-semibold uppercase text-sm tracking-widest mb-3">
+            Contact Us
+          </p>
           <h2 className="font-display font-extrabold text-3xl sm:text-5xl text-navy">
             Let's Build Something <span className="text-gradient-orange">Together</span>
           </h2>
@@ -34,22 +61,71 @@ export function Contact() {
 
         <div className="grid lg:grid-cols-2 gap-10">
           <div className="space-y-5">
-            <InfoCard icon={MapPin} title="Jai Shree Enterprises" body="G-1-3, Badharna Industrial Area, VKI Area Extn., Jaipur - 302013" />
-            <InfoCard icon={MapPin} title="Jai Shree Traders" body="Godown No. 02, G-1-3, Badharna Industrial Area, VKI Area Extn., Jaipur - 302013" />
+            <InfoCard
+              icon={MapPin}
+              title="Jai Shree Enterprises"
+              body="G-1-3, Badharna Industrial Area, VKI Area Extn., Jaipur - 302013"
+            />
+            <InfoCard
+              icon={MapPin}
+              title="Jai Shree Traders"
+              body="Godown No. 02, G-1-3, Badharna Industrial Area, VKI Area Extn., Jaipur - 302013"
+            />
             <div className="grid sm:grid-cols-2 gap-5">
-              <InfoCard icon={Phone} title="Neeraj Maheshwari" body={<a href="tel:919314094242" className="hover:text-orange">+91 93140 94242</a>} />
-              <InfoCard icon={Phone} title="Vishal Maheshwari" body={<a href="tel:919414405215" className="hover:text-orange">+91 94144 05215</a>} />
-              <InfoCard icon={Phone} title="Madhav Soni" body={<a href="tel:917615094242" className="hover:text-orange">+91 76150 94242</a>} />
+              <InfoCard
+                icon={Phone}
+                title="Neeraj Maheshwari"
+                body={
+                  <a href="tel:919314094242" className="hover:text-orange">
+                    +91 93140 94242
+                  </a>
+                }
+              />
+              <InfoCard
+                icon={Phone}
+                title="Vishal Maheshwari"
+                body={
+                  <a href="tel:919414405215" className="hover:text-orange">
+                    +91 94144 05215
+                  </a>
+                }
+              />
+              <InfoCard
+                icon={Phone}
+                title="Madhav Soni"
+                body={
+                  <a href="tel:917615094242" className="hover:text-orange">
+                    +91 76150 94242
+                  </a>
+                }
+              />
             </div>
             <InfoCard
               icon={Mail}
               title="Email"
-              body={<>
-                <a href="mailto:books.jse@gmail.com" className="hover:text-orange block break-all">books.jse@gmail.com</a>
-                <a href="mailto:jaishreetraders5@gmail.com" className="hover:text-orange block break-all">jaishreetraders5@gmail.com</a>
-              </>}
+              body={
+                <>
+                  <a
+                    href="mailto:books.jse@gmail.com"
+                    className="hover:text-orange block break-all"
+                  >
+                    books.jse@gmail.com
+                  </a>
+                  <a
+                    href="mailto:jaishreetraders5@gmail.com"
+                    className="hover:text-orange block break-all"
+                  >
+                    jaishreetraders5@gmail.com
+                  </a>
+                </>
+              }
             />
-            <a href="https://wa.me/917615094242" target="_blank" rel="noopener" className="flex items-center justify-center gap-3 w-full py-5 rounded-2xl bg-whatsapp text-white font-bold text-lg shadow-lg hover:scale-[1.02] transition">
+            <a
+              href="https://wa.me/917615094242"
+              target="_blank"
+              rel="noopener"
+              className="flex items-center justify-center gap-3 w-full py-5 rounded-2xl bg-whatsapp text-white font-bold text-lg shadow-lg hover:scale-[1.02] transition"
+            >
               <MessageCircle className="w-6 h-6" /> WhatsApp Us Now
             </a>
           </div>
@@ -67,7 +143,10 @@ export function Contact() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">Product Interest</label>
-              <select name="product" className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-orange">
+              <select
+                name="product"
+                className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-orange"
+              >
                 <option>HDPE Granules</option>
                 <option>LDPE Granules</option>
                 <option>PP / PPCP Granules</option>
@@ -77,11 +156,25 @@ export function Contact() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">Message</label>
-              <textarea name="message" rows={4} className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-orange resize-none" />
+              <textarea
+                name="message"
+                rows={4}
+                className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-orange resize-none"
+              />
             </div>
             <div>
-              <button type="submit" className="w-full py-4 rounded-xl text-white font-semibold inline-flex items-center justify-center gap-2 shadow-lg hover:scale-[1.01] transition" style={{ background: "var(--gradient-orange)" }}>
-                {sent ? "Thank you! We'll contact you soon." : (<>Send Enquiry <Send className="w-4 h-4" /></>)}
+              <button
+                type="submit"
+                className="w-full py-4 rounded-xl text-white font-semibold inline-flex items-center justify-center gap-2 shadow-lg hover:scale-[1.01] transition"
+                style={{ background: "var(--gradient-orange)" }}
+              >
+                {sent ? (
+                  "Thank you! We'll contact you soon."
+                ) : (
+                  <>
+                    Send Enquiry <Send className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -91,10 +184,21 @@ export function Contact() {
   );
 }
 
-function InfoCard({ icon: Icon, title, body }: { icon: React.ElementType; title: string; body: React.ReactNode }) {
+function InfoCard({
+  icon: Icon,
+  title,
+  body,
+}: {
+  icon: React.ElementType;
+  title: string;
+  body: React.ReactNode;
+}) {
   return (
     <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border shadow-card">
-      <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--gradient-navy)" }}>
+      <div
+        className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background: "var(--gradient-navy)" }}
+      >
         <Icon className="w-5 h-5 text-white" />
       </div>
       <div>
@@ -109,7 +213,12 @@ function Field({ label, name, type = "text" }: { label: string; name: string; ty
   return (
     <div>
       <label className="block text-sm font-medium mb-1.5">{label}</label>
-      <input type={type} name={name} required className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-orange" />
+      <input
+        type={type}
+        name={name}
+        required
+        className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-orange"
+      />
     </div>
   );
 }

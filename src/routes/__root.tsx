@@ -77,11 +77,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Jai Shree Group | HDPE LDPE PP Granules & Poddar Pigments Masterbatch Dealer Jaipur" },
-      { name: "description", content: "Jai Shree Group — Trusted supplier of HDPE, LDPE, PP polymer granules and authorised dealer of Poddar Pigments masterbatches in Jaipur, Rajasthan. 20+ years experience. Pan-India supply. Call +91 7615094242" },
+      {
+        title:
+          "Jai Shree Group | HDPE LDPE PP Granules & Poddar Pigments Masterbatch Dealer Jaipur",
+      },
+      {
+        name: "description",
+        content:
+          "Jai Shree Group — Trusted supplier of HDPE, LDPE, PP polymer granules and authorised dealer of Poddar Pigments masterbatches in Jaipur, Rajasthan. 20+ years experience. Pan-India supply. Call +91 7615094242",
+      },
       { name: "author", content: "Jai Shree Group" },
-      { property: "og:title", content: "Jai Shree Group | Polymer Granules & Masterbatch Supplier" },
-      { property: "og:description", content: "Authorised dealer of Reliance, GAIL, HMEL polymers and Poddar Pigments masterbatches. Supplying HDPE, LDPE, PP granules pan-India since 2004." },
+      {
+        property: "og:title",
+        content: "Jai Shree Group | Polymer Granules & Masterbatch Supplier",
+      },
+      {
+        property: "og:description",
+        content:
+          "Authorised dealer of Reliance, GAIL, HMEL polymers and Poddar Pigments masterbatches. Supplying HDPE, LDPE, PP granules pan-India since 2004.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -89,7 +103,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -99,6 +116,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // During SSR we must render the full document (<html>/<head>/<body>), however
+  // on the client the app is mounted into the existing document. Rendering
+  // another <html> element inside the app root causes hydration errors.
+  // Detect runtime: if `window` is defined we are on the client and should
+  // render only the body contents.
+  if (typeof window !== "undefined") {
+    return (
+      <>
+        {children}
+        <Scripts />
+      </>
+    );
+  }
+
   return (
     <html lang="en">
       <head>
