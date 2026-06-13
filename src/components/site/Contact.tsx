@@ -3,48 +3,38 @@ import { MapPin, Phone, Mail, MessageCircle, Send } from "lucide-react";
 
 export function Contact() {
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
     const formEl = e.target as HTMLFormElement;
     const data = new FormData(formEl);
-    const name = String(data.get("name") ?? "");
-    const company = String(data.get("company") ?? "");
-    const phone = String(data.get("phone") ?? "");
-    const email = String(data.get("email") ?? "");
-    const product = String(data.get("product") ?? "");
-    const message = String(data.get("message") ?? "");
 
-    const text = `Name: ${name}\nCompany: ${company}\nPhone: ${phone}\nEmail: ${email}\nProduct Interest: ${product}\nMessage: ${message}`;
-    const encoded = encodeURIComponent(text);
+    // Your Formspree endpoint (provided)
+    const endpoint = "https://formspree.io/f/xojzyalj";
 
-    // IMPORTANT: open WhatsApp immediately in the same user gesture to avoid popup blockers.
-    // Opening after async/await or setTimeout will usually be blocked by browsers (see StackOverflow discussions).
-    const waUrl = `https://wa.me/917615094242?text=${encoded}`;
     try {
-      window.open(waUrl, "_blank");
-    } catch (err) {
-      // best-effort fallback
-      window.location.href = waUrl;
-    }
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: data,
+      });
 
-    // Send form data in background (non-blocking) to an analytics/collection endpoint if configured.
-    // Use navigator.sendBeacon where available so it doesn't block the UI or interfere with the pop-up.
-    const backendEndpoint = "https://formspree.io/f/YOUR_FORM_ID"; // change or remove if you don't use Formspree
-    if (!backendEndpoint.includes("YOUR_FORM_ID")) {
-      try {
-        if (navigator.sendBeacon) {
-          navigator.sendBeacon(backendEndpoint, data);
-        } else {
-          // Fire-and-forget fetch; do not await.
-          fetch(backendEndpoint, { method: "POST", body: data }).catch(() => {});
-        }
-      } catch (e) {
-        // ignore background send errors
+      if (res.ok) {
+        setSent(true);
+        formEl.reset();
+      } else {
+        const json = await res.json().catch(() => ({}));
+        setError((json && (json.error || json.message)) || "Failed to send enquiry. Please try again.");
       }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setSent(true);
   }
 
   return (
@@ -135,6 +125,16 @@ export function Contact() {
             className="bg-card rounded-3xl p-8 shadow-card border border-border space-y-4"
           >
             <h3 className="font-display font-bold text-2xl text-navy mb-2">Send an Enquiry</h3>
+            {sent && (
+              <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
+                Enquiry sent — we'll email you back shortly.
+              </div>
+            )}
+            {error && (
+              <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
+                {error}
+              </div>
+            )}
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Name" name="name" />
               <Field label="Company" name="company" />
@@ -165,11 +165,14 @@ export function Contact() {
             <div>
               <button
                 type="submit"
-                className="w-full py-4 rounded-xl text-white font-semibold inline-flex items-center justify-center gap-2 shadow-lg hover:scale-[1.01] transition"
+                disabled={loading || sent}
+                className="w-full py-4 rounded-xl text-white font-semibold inline-flex items-center justify-center gap-2 shadow-lg hover:scale-[1.01] transition disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ background: "var(--gradient-orange)" }}
               >
-                {sent ? (
-                  "Thank you! We'll contact you soon."
+                {loading ? (
+                  <span>Sending...</span>
+                ) : sent ? (
+                  <span>Thank you! We'll contact you soon.</span>
                 ) : (
                   <>
                     Send Enquiry <Send className="w-4 h-4" />
